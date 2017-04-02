@@ -128,7 +128,20 @@ cell_dso <- stan_model('Cell.stan')
 
 dim(dd)
 # Suppose counts obtained every 10 time units
-dobs <- dd(seq(1,nrow(dd),by = 10))
+dobs <- dd[seq(1,nrow(dd),by = 10),]
+head(dobs)
 
+dat <- with(dobs, 
+            list(N = length(time),
+                 id = nid <- as.numeric(as.factor(id)),
+                 J = max(nid),
+                 Nt = max(time),
+                 time = time,
+                 Tc = CellUI,
+                 Ic = CellInf,
+                 Vc = virus,
+                 s = 1,
+                 C = 1))
+                 
 
 
