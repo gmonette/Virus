@@ -184,3 +184,4 @@ system.time(
 pars <- grepv('^T|^I|^V',names(mod), invert = T)
 traceplot(mod, pars = pars)
 pairs(mod, pars = pars)
+save(mod, file = 'mod.rda')
