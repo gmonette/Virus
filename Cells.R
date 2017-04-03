@@ -108,7 +108,13 @@ sim <- function(){
 }
 gd(lwd=2)
 xyplot(CellUI + CellInf + virus ~ time| as.factor(virus0),
-                    sim(), type = 'l', auto.key = list(columns=3,lines=T,points=F))
+                    sim(), type = 'l', 
+       auto.key = list(space = 'top',columns=3,
+                       text = c('uninfected','infected','virus'),
+                       lines=T,points=F),
+       ylab = 'cell counts',
+       scales = list(x = list(rot=45,alternating = F)),
+       sub = 'infection dynamics with varying initial virus counts')
 dd <- sim()
 head(dd)
 tail(dd)
@@ -120,28 +126,61 @@ library(latticeExtra)
 knitr::knit_exit()
 #+
 print(readLines('Cell.stan'),quote =F)
-cell_dso <- stan_model('Cell.stan')
-
+system.time(cell_dso <- stan_model('Cell.stan'))
 #'
 #' ## Prepare data list
 #'
 
 dim(dd)
 # Suppose counts obtained every 10 time units
-dobs <- dd[seq(1,nrow(dd),by = 10),]
+# dobs <- dd[seq(1,nrow(dd),by = 10),]
+dobs <- dd
 head(dobs)
-
+dobs <- within(dobs, {
+  Tc <- CellUI + sqrt(CellUI)*rnorm(CellUI)
+  Ic <- CellInf + sqrt(CellInf)*rnorm(CellInf)
+  Vc <- virus + sqrt(virus)*rnorm(virus)
+})
 dat <- with(dobs, 
             list(N = length(time),
                  id = nid <- as.numeric(as.factor(id)),
                  J = max(nid),
                  Nt = max(time),
                  time = time,
-                 Tc = CellUI,
-                 Ic = CellInf,
-                 Vc = virus,
+                 Tc = Tc,
+                 Ic = Ic,
+                 Vc = Vc,
                  s = 1,
                  C = 1))
                  
 
+# row_vector<lower=0>[J] T1; // uninfected cells 
+# row_vector<lower=0>[J] I1; // infected cells
+# row_vector<lower=0>[J] V1; // viruses
+# real <lower=0> lambda; // autonomous cell generation rate 
+# real <lower=0> dT;     // death rate of uninfected cells
+# real <lower=0> dI;     // death rate of infected cells
+# real <lower=0> beta;   // infection rate 
+# real <lower=0> p;      // production rate of viruses per infected cell
+# real <lower=0> c;      // 
+  
+dat$J
+inits <- list(T1 = rep(2000,dat$J), 
+              I1 = rep(1, dat$J),
+              V1 = rep(1, dat$J),
+              lambda = 10,
+              dT=.0001,
+              dI=.0001,
+              beta = .0000001,
+              p = .0001,
+              c = .0001)
+initslist <- list(inits,inits,inits,inits)
 
+system.time(
+  mod <- sampling(cell_dso, dat, chains=4,
+                  init = initslist)
+) # 23871 sec = 6.63 hours = overnight
+
+pars <- grepv('^T|^I|^V',names(mod), invert = T)
+traceplot(mod, pars = pars)
+pairs(mod, pars = pars)

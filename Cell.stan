@@ -52,9 +52,9 @@ transformed parameters {
     tcurr = T[t,];
     icurr = I[t,];
     vcurr = V[t,];
-    T[t+1,] = lambda - dT*tcurr - beta * tcurr .* vcurr;
-    I[t+1,] = beta * tcurr .* vcurr - dI * icurr;
-    V[t+1,] = p*icurr - c*vcurr;
+    T[t+1,] = tcurr + lambda - dT*tcurr - beta * tcurr .* vcurr;
+    I[t+1,] = icurr + beta * tcurr .* vcurr - dI * icurr;
+    V[t+1,] = vcurr + p*icurr - c*vcurr;
   }
 }
 model {
@@ -73,6 +73,8 @@ model {
     Texp[n] = T[time[n],id[n]];  
     Iexp[n] = I[time[n],id[n]];  
     Vexp[n] = V[time[n],id[n]];
+   // if(n<10) print("n = ",n," T = ", Texp[n], " I = ",Iexp[n]," V = ",Vexp[n]);
+   // if(n%100 == 0 ) print("n = ",n," T = ", Texp[n], " I = ",Iexp[n]," V = ",Vexp[n]);
   }
   Tc ~ normal(Texp, sd_factor * Texp);
   Ic ~ normal(Iexp, sd_factor * Iexp);
