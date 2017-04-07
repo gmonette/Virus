@@ -251,6 +251,47 @@ traceplot(mod_4, pars = pars)
 pairs(mod_4, pars = pars)
 
 
+#'
+#' ## Diffuse priors on parameters except lambda with informative prior and dI != dT
+#'
+
+print(readLines('Cell_5.stan'),quote =F)
+system.time(cell_5_dso <- stan_model('Cell_5.stan'))
+
+
+system.time(
+  mod_5 <- sampling(cell_5_dso, dat, chains=4,
+                    init = list(inits)[rep(1,4)])
+) 
+
+
+pars <- grepv('^T|^I|^V',names(mod_5), invert = T)
+traceplot(mod_5, pars = pars)
+pairs(mod_5, pars = pars)
+
+#'
+#' ## Normal priors on parameters and dI != dT
+#'
+
+print(readLines('Cell_6.stan'),quote =F)
+# system.time(cell_6_dso <- stan_model('Cell_6.stan'))
+
+
+system.time(
+  mod_6 <- stan('Cell_6.stan', data = dat, chains=4,
+                    init = list(inits)[rep(1,4)])
+) 
+
+
+pars <- grepv('^T|^I|^V',names(mod_6), invert = T)
+traceplot(mod_6, pars = pars)
+pairs(mod_6, pars = pars)
+print(mod_6, pars = pars, digits = 6)
+
+
+
+###############################  rough
+
 print(readLines('Cell_3.stan'),quote =F)
 system.time(cell_3_dso <- stan_model('Cell_3.stan'))
 
